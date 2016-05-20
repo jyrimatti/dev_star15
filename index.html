@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Composing functions and beyond</title>
+
+		<meta name="description" content="A presentation looking into composition of different kinds of functions and beyond">
+		<meta name="author" content="Jyri-Matti 'Jüppe' Lähteenmäki">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<style>
+			.reveal .footer {
+			  color: gray;
+			  position: absolute;
+			  top: 1em;
+			  right: 1em;
+			  font-size: 0.4em;
+			}
+		</style>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/sky.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<div class="slides">
+				<section>
+					<h1>Composing functions<br />and beyond</h1>
+					<p><i>dev* 2015</i></p>
+				</section>
+
+				<section>
+					<h2>menu</h2>
+					<ul>
+						<li class="fragment">functions like this and that</li>
+						<li class="fragment">composition for all!</li>
+						<li class="fragment">beyond functions</li>
+					</ul>
+					<p class="fragment"><i>examples in Haskell, <br /> but the ideas carry to all functional languages</i></p>
+                                        <p class="fragment">Disclaimer: <i>I am yet to find the time to think about laws and prove my claims, so be a sceptical reader!</i></p>
+				</section>
+
+				<section>
+					<h2>functions</h2>
+					<span class="fragment">
+						<code class="haskell">foo :: a -> b</code>
+						<p>"<i>foo</i> is a function from value of type <i>a</i> to value of type <i>b</i>"</p>
+						<pre><code class="java">public static &lt;A,B&gt; B foo(A a) {...} // java</code></pre>
+					</span>
+				</section>
+
+				<section>
+					<h2>function composition</h2>
+					<span class="fragment">
+						<p><code class="haskell">(.) :: (b -> c) -> (a -> b) -> (a -> c)</code></p>
+						<p><code class="haskell">baz = bar . foo</code></p>
+						<p>"<i>dot</i> is a function from two functions to a third function"</p>
+						<pre><code>baz = bar ∘ foo // math</code></pre>
+						<pre><code class="java">Function&lt;A,C&gt; baz = bar.compose(foo) // java</code></pre>
+					</span>
+				</section>
+
+				<section>
+					<h2>different kinds of functions</h2>
+				</section>
+
+				<section>
+					<h2>use case</h2>
+					<ol>
+						<li>get the smallest integer from a list</li>
+						<li>divide "some number" with this integer</li>
+						<li>compose these in the spirit of functional programming</li>
+					</ol>
+					<p>(types are commented out,<br /> they carry no required information)</p>
+				</section>
+
+				<section>
+					<h2>a -> b</h2>
+					<span class="fragment">
+						<p>a regular function</p>
+						<p>from a value to a value of possibly another type</p>
+					</span>
+				</section>
+
+				<section>
+					<h2>ordinary function composition</h2>
+					<pre><code class="haskell">
+--functionAB :: [Int] -> Int
+functionAB a = minimum a
+
+--functionBC :: Int -> Int
+functionBC b = 42 `div` b
+
+--function :: [Int] -> Int
+function = functionBC . functionAB
+					</code></pre>
+				</section>
+
+				<section>
+					<h2>f a -> f b</h2>
+					<span class="fragment">
+						<p>a <i>lifted</i> or a <i>contextual</i> function</p>
+						<p>like <code class="haskell">a -> b</code> but lifted to work with values in a <i>context</i></p>
+						<pre><code class="java">public static &lt;A,B&gt; F&lt;B&gt; foo(F&lt;A&gt; a) {...} // java</code></pre>
+						<p>this is easily achieved by making <i>f</i> a <i>Functor</i></p>
+					</span>
+				</section>
+
+				<section>
+					<h2>"contextual" function composition</h2>
+					<pre><code class="haskell">
+--liftedAB :: Maybe [Int] -> Maybe Int
+liftedAB = fmap functionAB
+
+--liftedBC :: Maybe Int -> Maybe Int
+liftedBC = fmap functionBC
+
+--lifted :: Maybe [Int] -> Maybe Int
+lifted = liftedBC . liftedAB
+					</code></pre>
+				</section>
+
+				<section>
+					<p>sometimes we want to include some<br />pass-through context</p>
+					<p>logging, profiling...</p>
+					<p>still composable?</p>
+				</section>
+				<section>
+					<h2>f (a -> b)</h2>
+					<span class="fragment">
+						<p>an <i>applicative style</i> function</p>
+						<p>like <code class="haskell">a -> b</code> but whole function wrapped in a context</p>
+						<p>allows the abstraction to <i>do something</i> with the function</p>
+						<pre><code class="java">public static /* exercise for the reader ;) */ {...} // java</code></pre>
+					</span>
+				</section>
+
+				<section>
+					<h2>applicative function composition</h2>
+					<pre><code class="haskell">
+-- composition for Applicatives (why is this not in hackage?)
+(&lt;.&gt;) :: Applicative f => f (b -> c) -> f (a -> b) -> f (a -> c)
+f &lt;.&gt; g = (.) &lt;$&gt; f &lt;*&gt; g
+
+-- Tuple2 happens to be a suitable Applicative:
+type Logged = (,) [String]
+
+--applicativeAB :: Logged ([Int] -> Int)
+applicativeAB = (["calculating minimums..."], minimum)
+
+--applicativeBC :: Logged (Int -> Int)
+applicativeBC = (["dividing by the value..."], (42 `div` ))
+
+--applicative :: Logged ([Int] -> Int)
+applicative = applicativeBC &lt;.&gt; applicativeAB
+					</code></pre>
+				</section>
+
+				<section>
+					<p>our example would sometimes divide by zero</p>
+					<p>and fails with an empty array</p>
+					<p>could we catch these in the type system?</p>
+				</section>
+
+				<section>
+					<h2>a -> m b</h2>
+					<span class="fragment">
+						<p>a <i>monadic</i> function</p>
+						<pre><code class="java">public static &lt;M,A,B&gt; M&lt;B&gt; foo(A a) {...} // java, in theory...</code></pre>
+					</span>
+				</section>
+
+				<section>
+					<h2>monadic function composition</h2>
+					<pre><code class="haskell">
+--monadicAmB :: [Int] -> Maybe Int
+monadicAmB [] = Nothing
+monadicAmB a = Just (minimum a)
+
+--monadicBmC :: Int -> Maybe Int
+monadicBmC 0 = Nothing
+monadicBmC b = Just (42 `div` b)
+
+--monadic :: [Int] -> Maybe Int
+monadic  = monadicBmC &lt;=&lt; monadicAmB
+					</code></pre>
+				</section>
+
+				<section>
+					<p>our example has a magic constant</p>
+					<p>perhaps we would like to get the constant from<br /><i>an environment</i>?</p>
+				</section>
+
+				<section>
+					<h2>w a -> b</h2>
+					<span class="fragment">
+						<p>a <i>comonadic</i> function</p>
+						<pre><code class="java">public static &lt;W,A,B&gt; B foo(W&lt;A&gt; wa) {...} // java, in theory...</code></pre>
+					</span>
+				</section>
+
+				<section>
+					<h2>comonadic function composition</h2>
+					<pre><code class="haskell">
+-- Tuple2 happens to be a suitable Comonad,
+-- so we can simply pass in the environment e as the left side:
+type WithEnv e = (,) e
+
+--comonadic_mAB :: WithEnv Int [Int] -> Int
+comonadic_mAB (e,[]) = e
+comonadic_mAB (e,a) = minimum a
+
+--comonadic_mBC :: WithEnv Int Int -> Int
+comonadic_mBC (e,0) = e
+comonadic_mBC (e,b) = e `div` b
+
+--comonadic :: WithEnv Int [Int] -> Int
+comonadic  = comonadic_mBC =&lt;= comonadic_mAB
+					</code></pre>
+				</section>
+
+				<section>
+					<h2>composition, repeated:</h2>
+				</section>
+
+				<section>
+					<h2>regular functions</h2>
+					<p><code class="haskell">foo :: a -> b</code><p>
+					<p><code class="haskell">bar :: b -> c</code><p>
+					<p><code class="haskell">baz = bar . foo</code><p>
+				</section>
+
+				<section>
+					<h2>"contextual" functions</h2>
+					<p><code class="haskell">foo :: f a -> f b</code><p>
+					<p><code class="haskell">bar :: f b -> f c</code><p>
+					<p><code class="haskell">baz = bar . foo</code><p>
+				</section>
+
+				<section>
+					<h2>applicative functions</h2>
+					<p><code class="haskell">foo :: f (a -> b)</code><p>
+					<p><code class="haskell">bar :: f (b -> c)</code><p>
+					<p><code class="haskell">baz = bar &lt;.&gt; foo</code><p>
+					<p><code>&lt;.&gt;</code> is defined in a few random places...</p>
+				</section>
+
+				<section>
+					<h2>monadic functions</h2>
+					<p><code class="haskell">foo :: a -> m b</code></p>
+					<p><code class="haskell">bar :: b -> m c</code></p>
+					<p><code class="haskell">baz = bar &lt;=&lt; foo</code></p>
+					<p><code>&lt;=&lt;</code> is defined in Control.Monad</p>
+				</section>
+
+				<section>
+					<h2>comonadic functions</h2>
+					<p><code class="haskell">foo :: w a -> b</code></p>
+					<p><code class="haskell">bar :: w b -> c</code></p>
+					<p><code class="haskell">baz = bar =&lt;= foo</code></p>
+					<p><code>=&lt;=</code> is defined in Control.Comonad</p>
+				</section>
+
+				<section>
+					<h2>mon... comon... WTF?</h2>
+					<p class="fragment">monad is just an abstraction for<br />composing certain kind of functions</p>
+					<p class="fragment">when functions like <code class="haskell">a -> m b</code> compose<br /> (and obey identity and associativity laws)<br/> <code>m</code> <i>forms a monad</i></p>
+					<p class="fragment">Similarly for comonad. That's it. No burritos.</p>
+				</section>
+
+				<section>
+					<h2>still need something?</h2>
+					<p class="fragment">with monadic functions<br />you can affect the subsequent behavior<br />via contextual return values</p>
+					<p class="fragment">with comonadic functions,<br />their behavior can be affected<br />by context from the input</p>
+					<p class="fragment">a passionate developer would like to have both!</p>
+				</section>
+
+				<section>
+					<pre><code class="haskell">
+--both_wAmB :: WithEnv Int [Int] -> Maybe Int
+both_wAmB (e,[]) = Nothing
+both_wAmB (e,a)  = Just (minimum a)
+
+--both_wBmC :: WithEnv Int Int -> Maybe Int
+both_wBmC (e,0) = Nothing
+both_wBmC (e,b) = Just (e `div` b)
+
+-- Whoops, how to compose these?
+--both :: WithEnv Int [Int] -> Maybe Int
+both = undefined
+					</code></pre>
+				</section>
+
+				<section>
+					<h2>what next?</h2>
+					<pre><center><code class="haskell">
+  a -> b
+  f a -> f b
+    a -> m b
+w a -> b
+f (a -> b)
+  ?
+</code></center></pre>
+				</section>
+
+				<section>
+					<h2>beyond functions</h2>
+					<p>an applicative <code>f (a -> b)</code> is a really general absraction</p>
+					<p>can only apply the given argument and return the result</p>
+					<p>to <i>interact</i> with input and output we need more</p>
+				</section>
+
+				<section>
+					<h2>our need, as a type</h2>
+					<pre><code class="haskell">data MyFunctionType a b = MyFunctionType (WithEnv Int a -> Maybe b)</code></pre>
+					<p>could make this an Applicative...<br />...but wouldn't help with composition</p>
+				</section>
+
+				<section>
+					<h2>a Category</h2>
+					<span class="fragment">
+					<pre><code class="haskell">
+class Category cat where
+  id :: cat a a
+ (.) :: cat b c -> cat a b -> cat a c
+					</code></pre>
+					<p>category gives us composition</p>
+					</span>
+				</section>
+
+				<section>
+					<pre><code class="haskell">
+instance Category MyFunctionType where
+  id = MyFunctionType $ Just . snd
+  MyFunctionType g . MyFunctionType f = MyFunctionType $
+	\(e,a) -> case f (e,a) of
+                Nothing -> Nothing
+                Just b -> g (e,b)
+					</code></pre>
+				</section>
+
+				<section>
+					<pre><code class="haskell">
+--cat_AB :: MyFunctionType [Int] Int
+cat_AB = MyFunctionType f
+  where f (_,[]) = Nothing
+        f (_,a)  = Just (minimum a)
+
+--cat_BC :: MyFunctionType Int Int
+cat_BC = MyFunctionType f
+  where f (_,0) = Nothing
+        f (e,b) = Just (e `div` b)
+
+--cat :: MyFunctionType [Int] Int
+cat = cat_BC . cat_AB
+					</code></pre>
+				</section>
+
+				<section>
+					<p>now we can compose our sophisticated type</p>
+					<p>so that's it</p>
+					<p>... or could we get more?</p>
+				</section>
+
+				<section>
+					<h2>functor</h2>
+					<span class="fragment">
+						<pre><code class="haskell">
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+	  					</code></pre>
+	  					<p>actually, a <i>covariant</i> functor</p>
+  					</span>
+				</section>
+
+				<section>
+					<h2>contrafunctor</h2>
+					<span class="fragment">
+						<pre><code class="haskell">
+class ContraFunctor f where
+  contramap :: (a -> b) -> f b -> f a
+	  					</code></pre>
+	  					<p>a contravariant functor</p>
+	  					<p>homework: Google for <i>covariance and contravariance</i></p>
+  					</span>
+				</section>
+
+				<section>
+					<h2>profunctor</h2>
+					<span class="fragment">
+						<pre><code class="haskell">
+class Profunctor p where
+  dimap :: (a -> b) -> (c -> d) -> p b c -> p a d
+	  					</code></pre>
+						<p>a functor of two type parameters,<br />first contravariant, second covariant</p>
+						<p>contravariant argument can be seen as input,<br />covariant as output</p>
+						<p>an ordinary function is a profunctor (it has input and output), but <b>other things can be profunctors too</b></p>
+					</span>
+				</section>
+
+				<section>
+					<h2>strength</h2>
+					<span class="fragment">
+						<pre><code class="haskell">
+class Profunctor p => Strong p where
+  first' :: p a b -> p (a, c) (b, c)
+						</code></pre>
+						<p>capability to "drop in" values to "pass through"</p>
+					</span>
+				</section>
+
+				<section>
+					<h2>category +<br />profunctor +<br /> strength</h2>
+					<p>simple and generic concept</p>
+					<p>combining these we get<br /><i>component networks!</i></p>
+					<p><i>stream transformers</i>, <i>simple automata</i>, <i>FRP</i>, <i>Music signals</i>, ...</p>
+				</section>
+
+				<section>
+					<h2>choice</h2>
+					<span class="fragment">
+						<pre><code class="haskell">
+class Profunctor p => Choice p where
+  left' :: p a b -> p (Either a c) (Either b c)
+						</code></pre>
+						<p>can "choose its output type based on its input"</p>
+						<p>this gives us branching!</p>
+					</span>
+				</section>
+
+				<section>
+					<h2>costrong</h2>
+					<span class="fragment">
+						<pre><code class="haskell">
+class Profunctor p => Costrong p where
+  unfirst :: p (a, d) (b, d) -> p a b
+						</code></pre>
+						<p>can "drop out" values from input and output type</p>
+						<p>this gives us feedback loops!</p>
+					</span>
+				</section>
+
+				<section>
+					<p>all these simple concepts</p>
+					<p>are combined in a powerful interface:</p>
+				</section>
+
+				<section>
+					<h2>arrow</h2>
+					<pre><code class="haskell">
+instance Arrow MyFunctionType where
+  arr = MyFunctionType . dimap snd Just 
+  first = first'
+
+instance ArrowChoice MyFunctionType where
+  left = left'
+
+instance ArrowLoop MyFunctionType where
+  loop = unfirst
+  					</code></pre>
+				</section>
+
+				<section>
+					<h2>about syntax</h2>
+					<p>different kinds of functions and "functions"</p>
+					<p>all can be composed,<br />although the operator looks different</p>
+					<p>but it's just syntax</p>
+				</section>
+
+				<section>
+					<h2>to summarize</h2>
+					<p class="fragment">functional programming is all about<br />functions and composition</p>
+					<p class="fragment">we can do composition<br />even though our functions are a bit weird</p>
+					<p class="fragment">we can do composition<br/ >even when our functions are <i>more than functions</i></p>
+				</section>
+
+				<section>
+					<p>recognize when you need<br />function composition</p>
+					<p>in any language</p>
+					<p>Haskell abstracts everything<br />but the concepts carry to other languages</p>
+				</section>
+
+				<section>
+					<h1>Thank you!</h1>
+					<p>this was just the tip of the iceberg</p>
+					<p>keep learning!</p>
+					<p>&nbsp;</p>
+					<p>code from this presentation:<br /><a href="https://gist.github.com/jyrimatti/797a9546fa0b456fc948">https://gist.github.com/jyrimatti/797a9546fa0b456fc948</a></p>
+				</section>
+			</div>
+			<div class="footer">
+				link to this presentation: <a href="http://lahteenmaki.net/dev_*15/">http://lahteenmaki.net/dev_*15/</a>
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
